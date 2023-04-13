@@ -1,27 +1,34 @@
-//
-//  AlertPresenter.swift
-//  YarrProject
-//
-//  Created by Никита Швец on 06.04.2023.
-//
-
 import UIKit
 
 final class AlertPresenter {
     
-    func presentAlert(title: String?, message: String?, viewController: UIViewController, handler: ((UIAlertAction, String?) -> Void)? = nil) {
+    struct Action {
+        let title: String
+        let style: UIAlertAction.Style
+        let handler: ((_ text: String?) -> Void)?
+    }
+    
+    func presentAlert(
+        over viewController: UIViewController,
+        title: String?,
+        message: String?,
+        actions: [Action]
+    ) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alert.addTextField { alertTextField in
-                alertTextField.placeholder = Strings.alertTextFieldPlaceholder
-            }
-        let action = UIAlertAction(title: Strings.alertActionTitle, style: .default) { action in
-            let textField = alert.textFields?.first
-            handler?(action, textField?.text)
+        alert.addTextField { alertTextField in
+            alertTextField.placeholder = Strings.Alerts.alertTextFieldPlaceholder
         }
-        let cancelAction = UIAlertAction(title: Strings.alertCancelActionTitle, style: .destructive)
-        alert.addAction(action)
-        alert.addAction(cancelAction)
+        
+        actions.forEach { action in
+            let alertAction = UIAlertAction(
+                title: action.title,
+                style: action.style,
+                handler: { _ in
+                    let text = alert.textFields?.first?.text
+                    action.handler?(text)
+                })
+            alert.addAction(alertAction)
+        }
         viewController.present(alert, animated: true, completion: nil)
     }
 }
-

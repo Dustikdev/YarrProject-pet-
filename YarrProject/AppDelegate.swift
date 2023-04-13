@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  YarrProject
-//
-//  Created by Никита Швец on 12.03.2023.
-//
-
 import UIKit
 
 @main

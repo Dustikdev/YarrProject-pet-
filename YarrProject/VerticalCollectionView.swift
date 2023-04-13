@@ -1,10 +1,3 @@
-//
-//  CollectionView.swift
-//  YarrProject
-//
-//  Created by Никита Швец on 24.03.2023.
-//
-
 import UIKit
 
 final class VerticalCollectionView: UICollectionView {

@@ -1,24 +1,32 @@
 import UIKit
+import CoreData
 
-final class ProjectsListViewController: UIViewController {
+final class ProjectDetailsViewController: UIViewController {
     
-    private let projectsListCollection = VerticalCollectionView()
+    var selectedProject: ProjectsListData? {
+        didSet {
+            if let argument = selectedProject?.explanation {
+                let predicate = NSPredicate(format: Predicates.forProjectDetails, argument)
+                projectDetailsData = modelManager.getProjectDetails(with: predicate)
+            }
+        }
+    }
+    private var selectedData: ProjectDetailsData?
+    private var projectDetailsData = [ProjectDetailsData]()
+    private let projectDetailsCollection = VerticalCollectionView()
     private let alertPresenter = AlertPresenter()
     private let modelManager = BusinessModelManager.shared
-    private var projectsListData = [ProjectsListData]()
     private let imagePicker = UIImagePickerController()
-    private var selectedData: ProjectsListData?
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
-        projectsListCollection.delegate = self
-        projectsListCollection.dataSource = self
-        projectsListCollection.register(cellType: CommonCollectionViewCell.self)
-        projectsListData = modelManager.getProjectLists()
+        projectDetailsCollection.delegate = self
+        projectDetailsCollection.dataSource = self
+        projectDetailsCollection.register(cellType: CommonCollectionViewCell.self)
     }
     
-    @objc private func didTapAddProject() {
+    @objc private func didTapAddView() {
         alertPresenter.presentAlert(
             over: self,
             title: Strings.Alerts.alertTitleProjectList,
@@ -34,40 +42,45 @@ final class ProjectsListViewController: UIViewController {
     }
     
     private func saveText(text: String?) {
-        let tempProjectsListData = modelManager.projectListData()
-        tempProjectsListData.explanation = text
+        let tempProjectDetailsData = self.modelManager.projectDetailsData()
+        tempProjectDetailsData.explanation = text
+        tempProjectDetailsData.detailsToList = self.selectedProject
         modelManager.save()
-        projectsListData.append(tempProjectsListData)
-        projectsListCollection.reloadData()
+        projectDetailsData.append(tempProjectDetailsData)
+        projectDetailsCollection.reloadData()
     }
     
     private func saveImage(image: UIImage?) {
         if let image {
             selectedData?.imageData = image.toData()
             modelManager.save()
-            projectsListCollection.reloadData()
+            projectDetailsCollection.reloadData()
         }
     }
     
-    private func didTapDeleteProject(with data: ProjectsListData) {
-        projectsListData.removeAll { $0.id == data.id }
-        modelManager.delete(data: data)
-        modelManager.save()
-        projectsListCollection.reloadData()
-    }
-
-    private func didTapEditAlert(text: String?, data: ProjectsListData) {
-        data.explanation = text
+    private func didTapDeleteProject(with data: ProjectDetailsData) {
+        self.projectDetailsData.removeAll { $0.id == data.id }
+        self.modelManager.delete(data: data)
         self.modelManager.save()
-        self.projectsListCollection.reloadData()
+        self.projectDetailsCollection.reloadData()
     }
     
-    private func presentProjectDetails(with projectData: ProjectsListData) {
-        let vc = ProjectDetailsViewController()
-        vc.selectedProject = projectData
-        navigationController?.pushViewController(vc, animated: true)
+    @objc private func didMakePhotoButton() {
+        presentCameraViewController()
     }
-  
+    
+    private func presentCameraViewController() {
+        let vc = CameraViewController()
+        vc.delegate = self
+        self.present(vc, animated: true, completion: nil)
+    }
+    
+    private func didTapEditAlert(text: String?, data: ProjectDetailsData) {
+        data.explanation = text
+        self.modelManager.save()
+        self.projectDetailsCollection.reloadData()
+    }
+    
 //MARK: - setupUI
     
     private func setupView() {
@@ -77,25 +90,27 @@ final class ProjectsListViewController: UIViewController {
     }
     
     private func setupPreviewCollection() {
-        view.addSubview(projectsListCollection)
-        projectsListCollection.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(projectDetailsCollection)
+        projectDetailsCollection.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            projectsListCollection.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            projectsListCollection.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            projectsListCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            projectsListCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            projectDetailsCollection.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            projectDetailsCollection.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            projectDetailsCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            projectDetailsCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
     
     private func setupNavigationBar() {
-        navigationItem.title = Strings.NavigationBarTitles.projectListNavigationbarTitle
+        navigationItem.title = selectedProject?.explanation
         navigationController?.navigationBar.backgroundColor = .systemBackground
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: Images.SystemImages.plus, style: .plain, target: self, action: #selector(didTapAddProject))
+        let plus = UIBarButtonItem(image: Images.SystemImages.plus, style: .plain, target: self, action: #selector(didTapAddView))
+        let photo = UIBarButtonItem(image: Images.SystemImages.photo, style: .plain, target: self, action: #selector(didMakePhotoButton))
+        navigationItem.rightBarButtonItems = [plus, photo]
     }
-    
+
 //MARK: - menuConfiguration
     
-    private func configureContextMenu(data: ProjectsListData) -> UIContextMenuConfiguration {
+    private func configureContextMenu(data: ProjectDetailsData) -> UIContextMenuConfiguration {
             let context = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] (action) -> UIMenu? in
                 guard let self else { return nil }
                 let setupPhoto = UIAction(title: Strings.ContextMenuTitles.edit, image: Images.SystemImages.photo, identifier: nil, discoverabilityTitle: nil, state: .off) { [weak self] (_) in
@@ -121,21 +136,21 @@ final class ProjectsListViewController: UIViewController {
                 
                 return UIMenu(title: Strings.ContextMenuTitles.menuName, image: nil, identifier: nil, options: UIMenu.Options.displayInline, children: [setupPhoto, editText, delete])
             }
-            return context
-        }
+        return context
+    }
 }
 
 //MARK: - collectionview delegates
 
-extension ProjectsListViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+extension ProjectDetailsViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return projectsListData.count
+        return projectDetailsData.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(type: CommonCollectionViewCell.self, for: indexPath)
-        let projectData = projectsListData[safe: indexPath.row]
+        let projectData = projectDetailsData[safe: indexPath.row]
         let text = projectData?.explanation
         let image = projectData?.imageData?.toImage()
         cell.configure(viewModel: ViewModel(image: image, text: text))
@@ -158,28 +173,20 @@ extension ProjectsListViewController: UICollectionViewDelegate, UICollectionView
         return CommonConstants.edgeInsetsForCell
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let data = projectsListData[safe: indexPath.row] {
-            presentProjectDetails(with: data)
-        }
-    }
-    
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
         guard let indexPath = indexPaths.first else {
             return nil
         }
-        if let detailsData = projectsListData[safe: indexPath.row] {
+        if let detailsData = projectDetailsData[safe: indexPath.row] {
             return configureContextMenu(data: detailsData)
         }
         return nil
     }
 }
 
-//MARK: - ImagePicker
-
-extension ProjectsListViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+extension ProjectDetailsViewController: UINavigationControllerDelegate,  UIImagePickerControllerDelegate {
     
-    private func setPicture(for data: ProjectsListData) {
+    private func setPicture(for data: ProjectDetailsData) {
         if UIImagePickerController.isSourceTypeAvailable(.photoLibrary){
             imagePicker.delegate = self
             imagePicker.sourceType = .photoLibrary
@@ -193,5 +200,25 @@ extension ProjectsListViewController: UIImagePickerControllerDelegate, UINavigat
         let selectedImage = info[.originalImage] as? UIImage
         saveImage(image: selectedImage)
         dismiss(animated: true, completion: nil)
+    }
+}
+//MARK: - CameraViewControllerDelegate
+
+extension ProjectDetailsViewController: CameraViewControllerDelegate {
+    
+    func сameraViewControllerDidClosed(_ vc: CameraViewController) {
+        vc.dismiss(animated: true)
+    }
+    
+    func cameraViewController(_ vc: CameraViewController, didSave viewModel: ViewModel) {
+        let tempProjectDetailsData = modelManager.projectDetailsData()
+        tempProjectDetailsData.explanation = viewModel.text
+        if let convertedImage = viewModel.image {
+            tempProjectDetailsData.imageData = convertedImage.toData()
+        }
+        tempProjectDetailsData.detailsToList = self.selectedProject
+        self.modelManager.save()
+        self.projectDetailsData.append(tempProjectDetailsData)
+        self.projectDetailsCollection.reloadData()
     }
 }
