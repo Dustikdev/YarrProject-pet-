@@ -1,0 +1,52 @@
+# Xcode
+.DS_Store
+build/
+DerivedData/
+xcuserdata/
+
+# Swift Package Manager
+.build/
+
+# CocoaPods
+Pods/
+*.xcworkspace
+*.xcworkspacedata
+
+# Carthage
+Carthage/Build/
+
+# Generated files
+*.o
+*.pyc
+*.swp
+*~
+*.hmap
+
+# Dependency manager files
+Package.resolved
+
+# IDE files
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.xcuserstate
+project.xcworkspace/
+
+# Swift Package Manager
+/.build/
+
+# SwiftPM Package Builder
+/.swiftpm/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+
+# Danger
+danger-swift/
+
+# Code Coverage
+*.xccovreport/

@@ -1,10 +1,3 @@
-//
-//  UICollectionView+Ext.swift
-//  YarrProject
-//
-//  Created by Никита Швец on 06.04.2023.
-//
-
 import UIKit
 
 extension UICollectionView {

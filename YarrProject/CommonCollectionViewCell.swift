@@ -1,10 +1,3 @@
-//
-//  PreviewCollectionViewCell.swift
-//  YarrProject
-//
-//  Created by Никита Швец on 14.03.2023.
-//
-
 import UIKit
 
 final class CommonCollectionViewCell: UICollectionViewCell {
@@ -22,9 +15,10 @@ final class CommonCollectionViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(image: UIImage) {
+    func configure(viewModel: ViewModel) {
+        let image = viewModel.image ?? Images.AssetImages.defaultProjectIcon
         cellImage.image = image
-        cellLabel.text = "My label text"
+        cellLabel.text = viewModel.text
         cellImage.layer.cornerRadius = 20
     }
     
@@ -32,6 +26,7 @@ final class CommonCollectionViewCell: UICollectionViewCell {
         contentView.addSubview(cellImage)
         cellImage.translatesAutoresizingMaskIntoConstraints = false
         cellImage.clipsToBounds = true
+        cellImage.contentMode = .scaleAspectFill
         NSLayoutConstraint.activate([
             cellImage.topAnchor.constraint(equalTo: contentView.topAnchor),
             cellImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
@@ -44,11 +39,15 @@ final class CommonCollectionViewCell: UICollectionViewCell {
         contentView.addSubview(cellLabel)
         cellLabel.translatesAutoresizingMaskIntoConstraints = false
         cellLabel.font = .systemFont(ofSize: 20, weight: .regular)
-        cellLabel.numberOfLines = 0
-        cellLabel.textColor = .black
+        cellLabel.textAlignment = .center
+        cellLabel.numberOfLines = 1
+        cellLabel.adjustsFontSizeToFitWidth = true
+        cellLabel.minimumScaleFactor = 0.5
         NSLayoutConstraint.activate([
-            cellLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            cellLabel.topAnchor.constraint(equalTo: cellImage.bottomAnchor)
+            cellLabel.topAnchor.constraint(equalTo: cellImage.bottomAnchor),
+            cellLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            cellLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            cellLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
 }
